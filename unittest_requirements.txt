@@ -1,7 +1,7 @@
 # Unit test requirements
 mock
 aiotools
-pytest<8
+pytest<9
 pytest-django
 pytest-asyncio
 pytest-redis<3.1.0 # https://github.com/ClearcodeHQ/pytest-redis/issues/679
