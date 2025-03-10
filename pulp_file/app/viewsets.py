@@ -82,7 +82,7 @@ class FileContentViewSet(SingleArtifactContentUploadViewSet):
                 "effect": "allow",
             },
             {
-                "action": ["create", "set_label", "unset_label"],
+                "action": ["create"],
                 "principal": "authenticated",
                 "effect": "allow",
                 "condition": [
@@ -91,8 +91,20 @@ class FileContentViewSet(SingleArtifactContentUploadViewSet):
                     "has_upload_param_model_or_domain_or_obj_perms:core.change_upload",
                 ],
             },
+            {
+                "action": ["set_label", "unset_label"],
+                "principal": "authenticated",
+                "effect": "allow",
+                "condition": [
+                    "has_model_or_domain_perms:core.manage_content_labels",
+                ],
+            },
         ],
         "queryset_scoping": {"function": "scope_queryset"},
+    }
+    LOCKED_ROLES = {
+        # Even with this role, can only label content you can "see"
+        "file.filecontent_labeler": ["core.manage_content_labels"],
     }
 
 
@@ -184,7 +196,10 @@ class FileRepositoryViewSet(RepositoryViewSet, ModifyRepositoryActionMixin, Role
         "queryset_scoping": {"function": "scope_queryset"},
     }
     LOCKED_ROLES = {
-        "file.filerepository_creator": ["file.add_filerepository"],
+        "file.filerepository_creator": [
+            "file.add_filerepository",
+            "core.manage_content_labels",
+        ],
         "file.filerepository_owner": [
             "file.view_filerepository",
             "file.change_filerepository",

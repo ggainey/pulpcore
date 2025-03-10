@@ -1,0 +1,3 @@
+Reworked content-labeling RBAC to use a specific permission for set/unset labels.
+
+Repository-creator gets this permission by default.

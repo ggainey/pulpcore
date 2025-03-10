@@ -5,11 +5,12 @@ import pytest
 import uuid
 
 from pulpcore.client.pulp_file.models import SetLabel, UnsetLabel
+from pulpcore.client.pulp_file.exceptions import ForbiddenException
 
 
 @pytest.mark.parallel
 def test_content_with_labels(
-    pulpcore_bindings, file_repository_factory, tmp_path, file_bindings, monitor_task
+    pulpcore_bindings, file_repository_factory, gen_user, tmp_path, file_bindings, monitor_task
 ):
     """Test upload/-wth/search/set/unset content-labels."""
 
@@ -99,3 +100,60 @@ def test_content_with_labels(
     # Search for key_a, expect two results
     rslt = file_bindings.ContentFilesApi.list(pulp_label_select="key_a", repository_version=rv2)
     assert 1 == rslt.count
+
+
+@pytest.mark.parallel
+def test_content_with_labels_permissions(
+    file_repository_factory, gen_user, tmp_path, file_bindings, monitor_task
+):
+    def _create_labelled_content(repo, lbls, rel_path):
+        temp_file = tmp_path / str(uuid.uuid4())
+        temp_file.write_bytes(os.urandom(128))
+        kwargs = {
+            "file": str(temp_file),
+            "repository": repo.pulp_href,
+            "pulp_labels": lbls,
+            "relative_path": rel_path,
+        }
+        # Upload content with a set of labels
+        created = monitor_task(
+            file_bindings.ContentFilesApi.create(**kwargs).task
+        ).created_resources
+        assert 2 == len(created)
+        return file_bindings.ContentFilesApi.read(created[1]), created[0]
+
+    # Create a repo to upload-into
+    file_repo = file_repository_factory(name=str(uuid4()))
+    labels = {"test_one": "ONE", "test_two": "TWO"}
+    # Create a file to upload
+    content, rv = _create_labelled_content(file_repo, labels, "1.iso")
+
+    # Show that a "normal" user has no access to set/unset_label, even when they can access content
+    norman = gen_user(model_roles=["file.filerepository_viewer"])
+    with norman:
+        with pytest.raises(ForbiddenException):
+            sl = SetLabel(key="test_one", value="NOT-ONE")
+            file_bindings.ContentFilesApi.set_label(content.pulp_href, sl)
+        with pytest.raises(ForbiddenException):
+            sl = UnsetLabel(key="test_two")
+            file_bindings.ContentFilesApi.unset_label(content.pulp_href, sl)
+
+    # Show that a repository-owner has access to set/unset_label
+    repo_owner = gen_user(model_roles=["file.filerepository_creator", "file.filerepository_owner"])
+    with repo_owner:
+        file_repo = file_repository_factory(name=str(uuid4()))
+        labels = {"test_one": "ONE", "test_two": "TWO"}
+        # Create a file to upload
+        c2, rv = _create_labelled_content(file_repo, labels, "2.iso")
+        sl = SetLabel(key="test_one", value="NOT-ONE")
+        file_bindings.ContentFilesApi.set_label(c2.pulp_href, sl)
+        sl = UnsetLabel(key="test_two")
+        file_bindings.ContentFilesApi.unset_label(c2.pulp_href, sl)
+
+    # Show that a user with *only* the right role has access to set/unset_label
+    just_labeler = gen_user(model_roles=["file.filecontent_labeler", "file.filerepository_viewer"])
+    with just_labeler:
+        sl = SetLabel(key="new-test_one", value="NOT-NOT-ONE")
+        file_bindings.ContentFilesApi.set_label(content.pulp_href, sl)
+        sl = UnsetLabel(key="new-test_one")
+        file_bindings.ContentFilesApi.unset_label(content.pulp_href, sl)
