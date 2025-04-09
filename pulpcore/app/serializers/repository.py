@@ -271,6 +271,26 @@ class RemoteSerializer(ModelSerializer, HiddenFieldsMixin):
             raise serializers.ValidationError(_("proxy_url must not contain credentials"))
         return value
 
+    def validate_ca_cert(self, value):
+        import OpenSSL
+        if value:
+            cleansed_str = OpenSSL.crypto.dump_certificate(
+                OpenSSL.crypto.FILETYPE_PEM, OpenSSL.crypto.load_certificate(
+                    OpenSSL.crypto.FILETYPE_PEM,bytes(value, "UTF-8")
+                )
+            ).decode("ASCII")
+            return cleansed_str
+
+    def validate_client_cert(self, value):
+        import OpenSSL
+        if value:
+            cleansed_str = OpenSSL.crypto.dump_certificate(
+                OpenSSL.crypto.FILETYPE_PEM, OpenSSL.crypto.load_certificate(
+                    OpenSSL.crypto.FILETYPE_PEM,bytes(value, "UTF-8")
+                )
+            ).decode("ASCII")
+            return cleansed_str
+
     def validate(self, data):
         """
         Check, that proxy credentials are only provided completely and if a proxy is configured.

@@ -7,7 +7,7 @@ from django.db import connection
 
 from pulpcore.app.models import Remote, Domain
 from pulpcore.app.models.fields import _fernet, EncryptedTextField
-
+from pulp_file.app.serializers import FileRemoteSerializer
 
 TEST_KEY1 = b"hPCIFQV/upbvPRsEpgS7W32XdFA2EQgXnMtyNAekebQ="
 TEST_KEY2 = b"6Xyv+QezAQ+4R870F5qsgKcngzmm46caDB2gyo9qnpc="
@@ -75,3 +75,65 @@ def test_rotate_db_key(fake_fernet):
     del domain.storage_settings
     with pytest.raises(InvalidToken):
         domain.storage_settings
+
+GOOD_CERT = """
+-----BEGIN CERTIFICATE-----
+MIICoDCCAYgCCQC2c2uY34HNlzANBgkqhkiG9w0BAQUFADASMRAwDgYDVQQDDAdn
+b3ZlZ2FuMB4XDTE5MDMxMzIxMDMzMFoXDTM4MDYxNjIxMDMzMFowEjEQMA4GA1UE
+AwwHZ292ZWdhbjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANEatWsZ
+1iwGmTxD02dxMI4ci+Au4FzvmWLBWD07H5GGTVFwnqmNOKhP6DHs1EsMZevkUvaG
+CRxZlPYhjNFLZr2c2FnoDZ5nBXlSW6sodXURbMfyT187nDeBXVYFuh4T2eNCatnm
+t3vgdi+pWsF0LbOgpu7GJI2sh5K1imxyB77tJ7PFTDZCSohkK+A+0nDCnJqDUNXD
+5CK8iaBciCbnzp3nRKuM2EmgXno9Repy/HYxIgB7ZodPwDvYNjMGfvs0s9mJIKmc
+CKgkPXVO9y9gaRrrytICcPOs+YoU/PN4Ttg6wzxaWvJgw44vsR8wM/0i4HlXfBdl
+9br+cgn8jukDOgECAwEAATANBgkqhkiG9w0BAQUFAAOCAQEAyNHV6NA+0GfUrvBq
+AHXHNnBE3nzMhGPhF/0B/dO4o0n6pgGZyzRxaUaoo6+5oQnBf/2NmDyLWdalFWX7
+D1WBaxkhK+FU922+qwQKhABlwMxGCnfZ8F+rlk4lNotm3fP4wHbnO1SGIDvvZFt/
+mpMgkhwL4lShUFv57YylXr+D2vSFcAryKiVGk1X3sHMXlFAMLHUm3d97fJnmb1qQ
+wC43BlJCBQF98wKtYNwTUG/9gblfk8lCB2DL1hwmPy3q9KbSDOdUK3HW6a75ZzCD
+6mXc/Y0bJcwweDsywbPBYP13hYUcpw4htcU6hg6DsoAjLNkSrlY+GGo7htx+L9HH
+IwtfRg==
+-----END CERTIFICATE-----
+"""
+
+GOOD_CERT_WITH_COMMENT = """
+saydas Intermédiaire CA
+-----BEGIN CERTIFICATE-----
+MIICoDCCAYgCCQC2c2uY34HNlzANBgkqhkiG9w0BAQUFADASMRAwDgYDVQQDDAdn
+b3ZlZ2FuMB4XDTE5MDMxMzIxMDMzMFoXDTM4MDYxNjIxMDMzMFowEjEQMA4GA1UE
+AwwHZ292ZWdhbjCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBANEatWsZ
+1iwGmTxD02dxMI4ci+Au4FzvmWLBWD07H5GGTVFwnqmNOKhP6DHs1EsMZevkUvaG
+CRxZlPYhjNFLZr2c2FnoDZ5nBXlSW6sodXURbMfyT187nDeBXVYFuh4T2eNCatnm
+t3vgdi+pWsF0LbOgpu7GJI2sh5K1imxyB77tJ7PFTDZCSohkK+A+0nDCnJqDUNXD
+5CK8iaBciCbnzp3nRKuM2EmgXno9Repy/HYxIgB7ZodPwDvYNjMGfvs0s9mJIKmc
+CKgkPXVO9y9gaRrrytICcPOs+YoU/PN4Ttg6wzxaWvJgw44vsR8wM/0i4HlXfBdl
+9br+cgn8jukDOgECAwEAATANBgkqhkiG9w0BAQUFAAOCAQEAyNHV6NA+0GfUrvBq
+AHXHNnBE3nzMhGPhF/0B/dO4o0n6pgGZyzRxaUaoo6+5oQnBf/2NmDyLWdalFWX7
+D1WBaxkhK+FU922+qwQKhABlwMxGCnfZ8F+rlk4lNotm3fP4wHbnO1SGIDvvZFt/
+mpMgkhwL4lShUFv57YylXr+D2vSFcAryKiVGk1X3sHMXlFAMLHUm3d97fJnmb1qQ
+wC43BlJCBQF98wKtYNwTUG/9gblfk8lCB2DL1hwmPy3q9KbSDOdUK3HW6a75ZzCD
+6mXc/Y0bJcwweDsywbPBYP13hYUcpw4htcU6hg6DsoAjLNkSrlY+GGo7htx+L9HH
+IwtfRg==
+-----END CERTIFICATE-----
+"""
+
+BAD_CERT = """
+-----BEGIN CERTIFICATE-----\nBOGUS==\n-----END CERTIFICATE-----
+"""
+
+
+@pytest.mark.django_db
+def test_certificate_clean():
+    remote_keys = {"name": uuid4(), "url":"https://example.com", "ca_cert": GOOD_CERT}
+    remote_serializer = FileRemoteSerializer(data=remote_keys)
+    remote_serializer.is_valid(raise_exception=True)
+    assert remote_serializer.validated_data["ca_cert"] == GOOD_CERT
+
+    remote_keys["ca_cert"] = GOOD_CERT_WITH_COMMENT
+    remote_serializer = FileRemoteSerializer(data=remote_keys)
+    remote_serializer.is_valid(raise_exception=True)
+    assert remote_serializer.validated_data["ca_cert"] == GOOD_CERT
+
+    remote_keys["ca_cert"] = BAD_CERT
+    remote_serializer = FileRemoteSerializer(data=remote_keys)
+    remote_serializer.is_valid(raise_exception=True)

@@ -4,6 +4,7 @@ import atexit
 import copy
 from gettext import gettext as _
 from multidict import MultiDict
+import OpenSSL
 import platform
 import ssl
 import sys
@@ -102,7 +103,19 @@ class DownloaderFactory:
 
         sslcontext = None
         if self._remote.ca_cert:
+            # cleansed_cert = OpenSSL.crypto.load_certificate(
+            #     OpenSSL.crypto.FILETYPE_PEM,
+            #     bytes(self._remote.ca_cert, "UTF-8")
+            # )
+            # #cleansed_str = OpenSSL.crypto.dump_certificate(OpenSSL.crypto.FILETYPE_PEM, cleansed_cert).decode("ASCII")
+            # cleansed_str = OpenSSL.crypto.dump_certificate(
+            #     OpenSSL.crypto.FILETYPE_PEM, OpenSSL.crypto.load_certificate(
+            #         OpenSSL.crypto.FILETYPE_PEM,bytes(self._remote.ca_cert, "UTF-8")
+            #     )
+            # ).decode("ASCII")
+            # sslcontext = ssl.create_default_context(cadata=cleansed_str)
             sslcontext = ssl.create_default_context(cadata=self._remote.ca_cert)
+
         if self._remote.client_key and self._remote.client_cert:
             if not sslcontext:
                 sslcontext = ssl.create_default_context()
