@@ -19,7 +19,12 @@ from django_guid import get_guid
 from rest_framework.exceptions import APIException
 
 from pulpcore.app.apps import MODULE_PLUGIN_VERSIONS
-from pulpcore.app.contexts import awith_task_context, with_task_context, x_task_diagnostics_var
+from pulpcore.app.contexts import (
+    _current_pulp_api_version,
+    awith_task_context,
+    with_task_context,
+    x_task_diagnostics_var,
+)
 from pulpcore.app.loggers import deprecation_logger
 from pulpcore.app.models import AppStatus, Task, TaskGroup
 from pulpcore.app.util import (
@@ -407,7 +412,6 @@ def get_task_payload(
     function_name, task_group, args, kwargs, resources, versions, immediate, deferred, app_lock
 ):
     """Create arguments for creation of a new task"""
-    default_vers = settings.REST_FRAMEWORK.get("DEFAULT_VERSION", "v3")
     payload = {
         "state": TASK_STATES.WAITING,
         "logging_cid": (get_guid()),
@@ -422,9 +426,7 @@ def get_task_payload(
         "deferred": deferred,
         "profile_options": x_task_diagnostics_var.get(None),
         "app_lock": app_lock,
-        "pulp_api_version": kwargs.get("pulp_api_version", default_vers)
-        if kwargs
-        else default_vers,
+        "pulp_api_version": _current_pulp_api_version.get(),
     }
     return payload
 

@@ -469,8 +469,6 @@ class AsyncCreateMixin:
         serializer.is_valid(raise_exception=True)
         app_label = self.queryset.model._meta.app_label
         task_kwargs = {"data": request.data}
-        if kwargs.get("version"):
-            task_kwargs["pulp_api_version"] = kwargs.get("version")
         task = dispatch(
             tasks.base.general_create,
             exclusive_resources=self.async_reserved_resources(None),
@@ -505,8 +503,6 @@ class AsyncUpdateMixin(AsyncReservedObjectMixin):
                 "data": request.data,
                 "partial": partial,
             }
-            if kwargs.get("version"):
-                task_kwargs["pulp_api_version"] = kwargs.get("version")
             task = dispatch(
                 tasks.base.ageneral_update,
                 exclusive_resources=self.async_reserved_resources(instance),

@@ -281,8 +281,6 @@ class RepositoryVersionViewSet(
         if version in version.repository.protected_versions():
             raise serializers.ValidationError(PROTECTED_REPO_VERSION_MESSAGE)
         task_kwargs = {"pk": version.pk}
-        if kwargs.get("version"):
-            task_kwargs["pulp_api_version"] = kwargs.get("version")
         task = dispatch(
             tasks.repository.delete_version,
             exclusive_resources=[version.repository],
@@ -304,8 +302,6 @@ class RepositoryVersionViewSet(
         serializer.is_valid(raise_exception=True)
 
         verify_checksums = serializer.validated_data["verify_checksums"]
-        if kwargs.get("version"):
-            kwargs["pulp_api_version"] = kwargs.get("version")
 
         task = dispatch(
             tasks.repository.repair_version,

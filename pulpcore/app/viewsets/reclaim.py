@@ -44,8 +44,6 @@ class ReclaimSpaceViewSet(ViewSet):
             "repo_pks": reclaim_repo_pks,
             "keeplist_rv_pks": keeplist_rv_pks,
         }
-        if kwargs.get("version"):
-            task_kwargs["pulp_api_version"] = kwargs.get("version")
         task = dispatch(
             reclaim_space,
             exclusive_resources=exclusive_resources,

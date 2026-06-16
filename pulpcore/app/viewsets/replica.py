@@ -140,8 +140,6 @@ class UpstreamPulpViewSet(
         task_kwargs = {"server_pk": pk}
         if q_select := serializer.validated_data.get("q_select"):
             task_kwargs["q_select"] = q_select
-        if kwargs.get("version"):
-            task_kwargs["pulp_api_version"] = kwargs.get("version")
         dispatch(
             replicate_distributions,
             exclusive_resources=exclusive_resources,

@@ -149,6 +149,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "pulpcore.middleware.DomainMiddleware",
     "pulpcore.middleware.APIRootRewriteMiddleware",
+    "pulpcore.middleware.ApiVersionMiddleware",
     "pulpcore.middleware.TaskProfilerMiddleware",
 ]
 

@@ -268,8 +268,6 @@ class TaskViewSet(
         serializer.is_valid(raise_exception=True)
         current_user = get_current_user()
         task_kwargs = {"user_pk": None if current_user is None else current_user.pk}
-        if kwargs.get("version"):
-            task_kwargs["pulp_api_version"] = kwargs.get("version")
         task = dispatch(
             purge,
             args=[serializer.data["finished_before"], list(serializer.data["states"])],

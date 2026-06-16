@@ -122,8 +122,6 @@ class PulpExportViewSet(ExportViewSet):
         serializer = PulpExportSerializer(data=request.data, context={"exporter": exporter})
         serializer.is_valid(raise_exception=True)
         task_kwargs = {"exporter_pk": str(exporter.pk), "params": request.data}
-        if kwargs.get("version"):
-            task_kwargs["pulp_api_version"] = kwargs.get("version")
         # Invoke the export
         task = dispatch(
             pulp_export,
@@ -174,8 +172,6 @@ class FilesystemExportViewSet(ExportViewSet):
                 "publication_pk": publication.pk,
                 "start_repo_version_pk": start_repository_version_pk,
             }
-            if kwargs.get("version"):
-                task_kwargs["pulp_api_version"] = kwargs.get("version")
             task = dispatch(
                 fs_publication_export,
                 exclusive_resources=[exporter],
@@ -188,8 +184,6 @@ class FilesystemExportViewSet(ExportViewSet):
                 "repo_version_pk": repo_version.pk,
                 "start_repo_version_pk": start_repository_version_pk,
             }
-            if kwargs.get("version"):
-                task_kwargs["pulp_api_version"] = kwargs.get("version")
             task = dispatch(
                 fs_repo_version_export,
                 exclusive_resources=[exporter],

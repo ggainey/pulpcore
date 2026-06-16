@@ -106,8 +106,6 @@ class PulpImportViewSet(ImportViewSet):
             "toc": toc,
             "create_repositories": create_repositories,
         }
-        if kwargs.get("version"):
-            task_kwargs["pulp_api_version"] = kwargs.get("version")
         dispatch(
             pulp_import,
             exclusive_resources=[importer],

@@ -283,8 +283,6 @@ class FileRepositoryViewSet(RepositoryViewSet, ModifyRepositoryActionMixin, Role
             "mirror": mirror,
             "optimize": optimize,
         }
-        if kwargs.get("version"):
-            task_kwargs["pulp_api_version"] = kwargs.get("version")
 
         result = dispatch(
             tasks.synchronize,
@@ -582,9 +580,6 @@ class FilePublicationViewSet(PublicationViewSet, RolesMixin):
         if checkpoint:
             task_kwargs["checkpoint"] = True
 
-        if kwargs.get("version"):
-            task_kwargs["pulp_api_version"] = kwargs.get("version")
-
         result = dispatch(
             tasks.publish,
             shared_resources=[repository_version.repository],
@@ -810,8 +805,6 @@ class FileAlternateContentSourceViewSet(AlternateContentSourceViewSet, RolesMixi
                 "mirror": False,
                 "url": acs_url,
             }
-            if kwargs.get("version"):
-                task_kwargs["pulp_api_version"] = kwargs.get("version")
             # Dispatching ACS path to own task and assign it to common TaskGroup
             dispatch(
                 tasks.synchronize,
