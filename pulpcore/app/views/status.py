@@ -13,7 +13,8 @@ from pulpcore.app.apps import pulp_plugin_configs
 from pulpcore.app.models.content import Artifact
 from pulpcore.app.models.status import AppStatus
 from pulpcore.app.redis_connection import get_redis_connection
-from pulpcore.app.serializers.status import StatusSerializer, V4StatusSerializer
+from pulpcore.app.contexts import _current_pulp_api_version
+from pulpcore.app.serializers.status import StatusSerializer
 from pulpcore.app.util import get_domain
 
 _logger = logging.getLogger(__name__)
@@ -101,17 +102,11 @@ class StatusView(APIView):
 
         context = {"request": request}
 
-        # If V4 is enabled, we'll set up to use the "old" serializer for v3
-        # and the new one with pulp_api_version for anything else
-        if settings.ENABLE_V4_API:
-            if request.version == "v3":
-                serializer = StatusSerializer(data, context=context)
-            else:
-                data["pulp_api_version"] = request.version
-                data["supported_pulp_api_versions"] = settings.REST_FRAMEWORK["ALLOWED_VERSIONS"]
-                serializer = V4StatusSerializer(data, context=context)
-        else:
-            serializer = StatusSerializer(data, context=context)
+        version = _current_pulp_api_version.get()
+        if version != "v3":
+            data["pulp_api_version"] = version
+            data["supported_pulp_api_versions"] = settings.REST_FRAMEWORK["ALLOWED_VERSIONS"]
+        serializer = StatusSerializer(data, context=context)
         return Response(serializer.data)
 
     @staticmethod
