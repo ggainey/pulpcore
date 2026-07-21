@@ -44,17 +44,7 @@ def reverse(viewname, args=None, kwargs=None, request=None, relative_url=True, *
     """
     kwargs = kwargs or {}
     if settings.ENABLE_V4_API:
-        if request:
-            # Might be None if a plugin hasn't updated to using <version> yet
-            kwargs["version"] = (
-                request.version
-                if request.version
-                else settings.REST_FRAMEWORK.get("DEFAULT_VERSION", "v3")
-            )
-        else:
-            # If we have a curr-vers in a task-context this works. Otherwise, we're just
-            # going to get the current default-version here.
-            kwargs["version"] = _current_pulp_api_version.get()
+        kwargs["version"] = _current_pulp_api_version.get()
     if settings.DOMAIN_ENABLED:
         kwargs.setdefault("pulp_domain", get_domain().name)
     if settings.API_ROOT_REWRITE_HEADER:
