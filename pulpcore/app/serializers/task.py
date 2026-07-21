@@ -119,11 +119,6 @@ class TaskSerializer(ModelSerializer):
         help_text=_("The result of this task."),
     )
 
-    pulp_api_version = serializers.CharField(
-        help_text=_("The API-version that was invoked when creating the task."),
-        default=settings.REST_FRAMEWORK.get("DEFAULT_VERSION", "v3"),
-    )
-
     def get_worker(self, obj) -> t.Optional[OpenApiTypes.URI]:
         return None
 
@@ -155,7 +150,6 @@ class TaskSerializer(ModelSerializer):
             "created_resource_prns",
             "reserved_resources_record",
             "result",
-            "pulp_api_version",
         )
 
 
